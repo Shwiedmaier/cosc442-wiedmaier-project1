@@ -6,15 +6,17 @@ import java.util.Iterator;
 
 public class GameMaster {
 
-	private GameMasterProduct gameMasterProduct = new GameMasterProduct();
 	private static GameMaster gameMaster;
 	static final public int MAX_PLAYER = 8;	
+	private Die[] dice;
 	private GameBoard gameBoard;
 	private MonopolyGUI gui;
 	private int initAmountOfMoney;
 	private ArrayList<Player> players = new ArrayList<Player>();
 	private int turn = 0;
 	private int utilDiceRoll;
+	private boolean testMode;
+
 	public static GameMaster instance() {
 		if(gameMaster == null) {
 			gameMaster = new GameMaster();
@@ -24,7 +26,7 @@ public class GameMaster {
 
 	public GameMaster() {
 		initAmountOfMoney = 1500;
-		gameMasterProduct.setDice(new Die[] { new Die(), new Die() });
+		dice = new Die[]{new Die(), new Die()};
 	}
 
     public void btnBuyHouseClicked() {
@@ -91,7 +93,7 @@ public class GameMaster {
     }
     
     public void btnRollDiceClicked() {
-		int[] rolls = gameMasterProduct.rollDice(this.gui);
+		int[] rolls = rollDice();
 		if((rolls[0]+rolls[1]) > 0) {
 			Player player = getCurrentPlayer();
 			gui.setRollDiceEnabled(false);
@@ -233,7 +235,15 @@ public class GameMaster {
 	}
 	
 	public int[] rollDice() {
-		return gameMasterProduct.rollDice(this.gui);
+		if(testMode) {
+			return gui.getDiceRoll();
+		}
+		else {
+			return new int[]{
+					dice[0].getRoll(),
+					dice[1].getRoll()
+			};
+		}
 	}
 	
 	public void sendToJail(Player player) {
@@ -309,6 +319,6 @@ public class GameMaster {
 	}
 
 	public void setTestMode(boolean b) {
-		gameMasterProduct.setTestMode(b);
+		testMode = b;
 	}
 }
