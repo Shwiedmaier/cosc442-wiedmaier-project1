@@ -6,17 +6,13 @@ import java.util.Hashtable;
 
 
 public class Player {
-	//the key of colorGroups is the name of the color group.
-	private Hashtable<String, Integer> colorGroups = new Hashtable<String, Integer>();
+	public static final String properties = null;
+	private PlayerProduct2 playerProduct2 = new PlayerProduct2();
 	private boolean inJail;
 	private int money;
 	private String name;
 
 	private Cell position;
-	private ArrayList<PropertyCell> properties = new ArrayList<PropertyCell>();
-	private ArrayList<Cell> railroads = new ArrayList<Cell>();
-	private ArrayList<Cell> utilities = new ArrayList<Cell>();
-	
 	public Player() {
 		GameBoard gb = GameMaster.instance().getGameBoard();
 		inJail = false;
@@ -26,68 +22,24 @@ public class Player {
 	}
 
     public void buyProperty(Cell property, int amount) {
-        property.setTheOwner(this);
-        if(property instanceof PropertyCell) {
-            PropertyCell cell = (PropertyCell)property;
-            properties.add(cell);
-            colorGroups.put(
-                    cell.getColorGroup(), 
-                    new Integer(getPropertyNumberForColor(cell.getColorGroup())+1));
-        }
-        if(property instanceof RailRoadCell) {
-            railroads.add(property);
-            colorGroups.put(
-                    RailRoadCell.COLOR_GROUP, 
-                    new Integer(getPropertyNumberForColor(RailRoadCell.COLOR_GROUP)+1));
-        }
-        if(property instanceof UtilityCell) {
-            utilities.add(property);
-            colorGroups.put(
-                    UtilityCell.COLOR_GROUP, 
-                    new Integer(getPropertyNumberForColor(UtilityCell.COLOR_GROUP)+1));
-        }
-        setMoney(getMoney() - amount);
+        playerProduct2.buyProperty(property, amount, this.money, this);
     }
 	
 	public boolean canBuyHouse() {
-		return (getMonopolies().length != 0);
+		return playerProduct2.canBuyHouse();
 	}
 
 	public boolean checkProperty(String property) {
-		for(int i=0;i<properties.size();i++) {
-			IOwnable cell = (IOwnable)properties.get(i);
-			if(cell.getName().equals(property)) {
-				return true;
-			}
-		}
-		return false;
+		return playerProduct2.checkProperty(property);
 		
 	}
 	
 	public void exchangeProperty(Player player) {
-		for(int i = 0; i < getPropertyNumber(); i++ ) {
-			PropertyCell cell = getProperty(i);
-			cell.setTheOwner(player);
-			if(player == null) {
-				cell.setAvailable(true);
-				cell.setNumHouses(0);
-			}
-			else {
-				player.properties.add(cell);
-				colorGroups.put(
-						cell.getColorGroup(), 
-						new Integer(getPropertyNumberForColor(cell.getColorGroup())+1));
-			}
-		}
-		properties.clear();
+		playerProduct2.exchangeProperty(player);
 	}
     
     public IOwnable[] getAllProperties() {
-        ArrayList<Cell> list = new ArrayList<Cell>();
-        list.addAll(properties);
-        list.addAll(utilities);
-        list.addAll(railroads);
-        return (IOwnable[])list.toArray(new Cell[list.size()]);
+        return playerProduct2.getAllProperties();
     }
 
 	public int getMoney() {
@@ -95,19 +47,7 @@ public class Player {
 	}
 	
 	public String[] getMonopolies() {
-		ArrayList<String> monopolies = new ArrayList<String>();
-		Enumeration<String> colors = colorGroups.keys();
-		while(colors.hasMoreElements()) {
-			String color = (String)colors.nextElement();
-            if(!(color.equals(RailRoadCell.COLOR_GROUP)) && !(color.equals(UtilityCell.COLOR_GROUP))) {
-    			Integer num = (Integer)colorGroups.get(color);
-    			GameBoard gameBoard = GameMaster.instance().getGameBoard();
-    			if(num.intValue() == gameBoard.getPropertyNumberForColor(color)) {
-    				monopolies.add(color);
-    			}
-            }
-		}
-		return (String[])monopolies.toArray(new String[monopolies.size()]);
+		return playerProduct2.getPlayerProduct().getMonopolies();
 	}
 
 	public String getName() {
@@ -118,7 +58,7 @@ public class Player {
 		money -= JailCell.BAIL;
 		if(isBankrupt()) {
 			money = 0;
-			exchangeProperty(null);
+			playerProduct2.exchangeProperty(null);
 		}
 		inJail = false;
 		GameMaster.instance().updateGUI();
@@ -129,19 +69,11 @@ public class Player {
 	}
 	
 	public PropertyCell getProperty(int index) {
-		return (PropertyCell)properties.get(index);
+		return playerProduct2.getProperty(index);
 	}
 	
 	public int getPropertyNumber() {
-		return properties.size();
-	}
-
-	private int getPropertyNumberForColor(String name) {
-		Integer number = (Integer)colorGroups.get(name);
-		if(number != null) {
-			return number.intValue();
-		}
-		return 0;
+		return playerProduct2.getPropertyNumber();
 	}
 
 	public boolean isBankrupt() {
@@ -153,11 +85,11 @@ public class Player {
 	}
 
 	public int numberOfRR() {
-		return getPropertyNumberForColor(RailRoadCell.COLOR_GROUP);
+		return playerProduct2.getPlayerProduct().getPropertyNumberForColor(RailRoadCell.COLOR_GROUP);
 	}
 
 	public int numberOfUtil() {
-		return getPropertyNumberForColor(UtilityCell.COLOR_GROUP);
+		return playerProduct2.getPlayerProduct().getPropertyNumberForColor(UtilityCell.COLOR_GROUP);
 	}
 	
 	public void payRentTo(Player owner, int rentValue) {
@@ -171,7 +103,7 @@ public class Player {
 		}
 		if(isBankrupt()) {
 			money = 0;
-			exchangeProperty(owner);
+			playerProduct2.exchangeProperty(owner);
 		}
 	}
 	
@@ -210,29 +142,19 @@ public class Player {
 	}
 	
 	private void purchaseProperty(PropertyCell cell) {
-        buyProperty(cell, cell.getPrice());
+        playerProduct2.buyProperty(cell, cell.getPrice(), this.money, this);
 	}
 
 	private void purchaseRailRoad(RailRoadCell cell) {
-	    buyProperty(cell, cell.getPrice());
+	    playerProduct2.buyProperty(cell, cell.getPrice(), this.money, this);
 	}
 
 	private void purchaseUtility(UtilityCell cell) {
-	    buyProperty(cell, cell.getPrice());
+	    playerProduct2.buyProperty(cell, cell.getPrice(), this.money, this);
 	}
 
     public void sellProperty(IOwnable property, int amount) {
-        property.setTheOwner(null);
-        if(property instanceof PropertyCell) {
-            properties.remove(property);
-        }
-        if(property instanceof RailRoadCell) {
-            railroads.remove(property);
-        }
-        if(property instanceof UtilityCell) {
-            utilities.remove(property);
-        }
-        setMoney(getMoney() + amount);
+        playerProduct2.sellProperty(property, amount, this.money, this);
     }
 
 	public void setInJail(boolean inJail) {
@@ -256,8 +178,6 @@ public class Player {
     }
     
     public void resetProperty() {
-    	properties = new ArrayList<PropertyCell>();
-    	railroads = new ArrayList<Cell>();
-    	utilities = new ArrayList<Cell>();
+    	playerProduct2.resetProperty();
 	}
 }
