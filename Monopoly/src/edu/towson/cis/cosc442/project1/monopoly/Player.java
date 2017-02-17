@@ -66,8 +66,11 @@ public class Player {
 	
 	public void exchangeProperty(Player player) {
 		for(int i = 0; i < getPropertyNumber(); i++ ) {
-			PropertyCell cell = cell(player, i);
+			PropertyCell cell = getProperty(i);
+			cell.setTheOwner(player);
 			if(player == null) {
+				cell.setAvailable(true);
+				cell.setNumHouses(0);
 			}
 			else {
 				player.properties.add(cell);
@@ -77,17 +80,6 @@ public class Player {
 			}
 		}
 		properties.clear();
-	}
-
-	private PropertyCell cell(Player player, int i) {
-		PropertyCell cell = getProperty(i);
-		cell.setTheOwner(player);
-		if (player == null) {
-			cell.setAvailable(true);
-			cell.setNumHouses(0);
-		} else {
-		}
-		return cell;
 	}
     
     public IOwnable[] getAllProperties() {
@@ -169,24 +161,17 @@ public class Player {
 	}
 	
 	public void payRentTo(Player owner, int rentValue) {
-		owner(owner, rentValue);
 		if(money < rentValue) {
+			owner.money += money;
 			money -= rentValue;
 		}
 		else {
 			money -= rentValue;
+			owner.money +=rentValue;
 		}
 		if(isBankrupt()) {
 			money = 0;
 			exchangeProperty(owner);
-		}
-	}
-
-	private void owner(Player owner, int rentValue) {
-		if (money < rentValue) {
-			owner.money += money;
-		} else {
-			owner.money += rentValue;
 		}
 	}
 	
